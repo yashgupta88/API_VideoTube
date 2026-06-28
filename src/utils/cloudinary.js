@@ -30,6 +30,7 @@ Multer helps by :
 */
 
 import { v2 as cloudinary } from 'cloudinary';
+import 'dotenv/config'
 import fs from "fs"  // file system , no need to install , by default with node js 
 // fs bahut sari functionalities deta hai file handling ke , read write aur bahut sari , iske documentation me jake padho
 
@@ -62,15 +63,17 @@ const uploadOnCloudinary = async (localFilePath)=>{ // vhi local path jha , mult
         })
         // file has been uploaded succesfully
         // console.log("file is uploaded on cloudinary ",response) // there are many functionalities in response obj 
-        console.log("file is uploaded on cloudinary ",response.url)
+        //console.log("file is uploaded on cloudinary ",response.url)
         
-        await fs.unlink(localFilePath) // after uploading it to cloudinary , i had to delete it to free our storage 
+        await fs.unlinkSync(localFilePath) // after uploading it to cloudinary , i had to delete it to free our storage 
 
         return response;
     }
     catch(error){
+        console.log(error)
+        if(fs.existsSync(localFilePath)){
         fs.unlinkSync(localFilePath) // removes the locally saved temporary file as the upload operation got failed , so remove that file as , it has some error , thats why , it is  not being uploaded 
-
+        }
         return null;
     }
 }

@@ -45,7 +45,7 @@ const registerUser=asyncHandler(async (req,res)=>{
     // raw mw jake , text me jake JSON select kar lo 
 
     const {fullName , email , username ,password} = req.body; // using destructuring 
-    console.log("email : " ,email)
+    // console.log("email : " ,email)
 
     // ----------------------------> validation 
 
@@ -162,9 +162,16 @@ Return type: Object (or null)	   Return type: Array
 // read props  by consoling , req.body and req.files 
 // avatar[0] because there are many files inside any fields 
 
-const avatarLocalPath=req.files?.avatar[0]?.path
+// console.log(req.files);
 
-const coverImageLocalPath=req.files?.coverImage[0]?.path
+const avatarLocalPath=req.files?.avatar[0]?.path // check by console log req.files 
+
+// const coverImageLocalPath=req.files?.coverImage[0]?.path
+
+let coverImageLocalPath;
+if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length >0){
+    coverImageLocalPath=req.files.coverImage[0].path;
+}
 
 if(!avatarLocalPath){
     throw new ApiError(400 , "Avatar file is required ")
@@ -173,7 +180,7 @@ if(!avatarLocalPath){
 // --------------- upload them to cloudinary 
 
 const avatar=await uploadOnCloudinary(avatarLocalPath)
-const coverImage=await uploadOnCloudinary(coverImageLocalPath)
+const coverImage=await uploadOnCloudinary(coverImageLocalPath) /// when there is no image , cloudinary automatically gives empty string 
 
 //--------------- check whether avatar is uploaded or not on cloudinary 
 

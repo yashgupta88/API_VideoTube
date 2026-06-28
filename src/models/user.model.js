@@ -79,12 +79,12 @@ const userSchema=new mongoose.Schema({
 
 userSchema.pre("save", async function(next){  // pre is a hook(middleware) which works just before the given event 
     //  declare this function as 'Function(){}' not like '()=>{}' because here "this" is needed which arrow function has not  
-    if(!this.isModified("password")) return next();
+    if(!this.isModified("password")) return next;
 
     // agar password me change hai tabhi dubara encrypt karo , warna nhi karo 
 
     this.password=await bcrypt.hash(this.password,10) // kitne bhi hash rounds de sakte ho , ya by default chod do 
-    next() // pass flag to next 
+    return next // pass flag to next 
 })  
 
 // we can also make custom methods aur kuch methods already milte hai 
