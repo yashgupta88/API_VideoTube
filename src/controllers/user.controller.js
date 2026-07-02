@@ -5,11 +5,12 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import validator from 'validator';
 import {User} from '../models/user.model.js';
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deleteImageFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv"
 import 'dotenv/config'
+
 
 // method for registering user 
 // as we know that whenever we make an app from express we get four parameter out of 
@@ -225,8 +226,14 @@ if(!avatar){
 
 const user= await User.create({
     fullName,
-    avatar : avatar.url ,// beacuse cloudinary is returning whole response object 
-    coverImage: coverImage?.url || "" , // agar coverImage hai toh url nikal ke de do , varna empty string de do 
+    avatar : {
+        url:avatar.url,
+        public_id: avatar.public_id
+    },// beacuse cloudinary is returning whole response object 
+    coverImage: {
+        url : coverImage?.url || "",
+        public_id: coverImage?.public_id || "",
+    }  , // agar coverImage hai toh url nikal ke de do , varna empty string de do 
     email,
     password,
     username : username.toLowerCase()
@@ -531,10 +538,12 @@ const getCurrentUser = asyncHandler(async(req,res)=>{
     // since jwt authentication is already added as a middleware so we can directly access using req.user
     return res
     .status(200)
-    .json(200,req.user,"current user fetched successfully ")
+    .json(
+        new ApiResponse(200,req.user,"current user fetched successfully ")
+    )
 })
 
-const updateAccountDetails = asyncHandler((req,res)=>{
+const updateAccountDetails = asyncHandler(async (req,res)=>{
     // jo jo hum chahte hai , ki user update kar sake , vo update karenge sirf 
 
     // Note agar koi file change karwani hai , toh kois karo ki uska controller aur end point alag rakhne ki kosis karo , production me aisa hi hota hai , taki hume baar baar user ka pura document 
@@ -549,7 +558,7 @@ const updateAccountDetails = asyncHandler((req,res)=>{
         throw new ApiError(400,"All fields are required ")
     }
 
-    const user =User.findByIdAndUpdate(
+    const user =await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set:{ // many operators are available of mongoDB
@@ -577,6 +586,7 @@ const updateUserAvatar = asyncHandler(async(req,res)=>{
     // pahle ek multer as middleware laga dena is route ko access karne se pahle 
     // taki newly uploaded file aa sakte 
     // verify jwt bhi laga dena for gatting user
+    const oldPublicId=req.user.avatar.public_id
     
     const avatarLocalPath=req.file?.path
 
@@ -590,19 +600,29 @@ const updateUserAvatar = asyncHandler(async(req,res)=>{
           throw new ApiError(400,"Error while uploading avatar on cloudinary")
     }
     const url=avatar.url
+    const public_id=avatar.public_id
 
     const user=await User.findByIdAndUpdate(
         req.user?._id,
         {
              $set:{
-            avatar:url
-        }
+                avatar :{
+                    url,
+                    public_id
+                }
+            }
         },
         {
             new:true
         }
        
     ).select("-password -refreshToken")
+
+    const deletion=await deleteImageFromCloudinary(oldPublicId)
+    
+    if(!deletion || deletion.result !== "ok"){
+         console.error("Failed to delete old avatar:", oldPublicId);
+    }
 
     return res
     .status(200)
@@ -614,6 +634,7 @@ const updateUserCoverImage = asyncHandler(async(req,res)=>{
     // pahle ek multer as middleware laga dena is route ko access karne se pahle 
     // taki newly uploaded file aa sakte 
     // verify jwt bhi laga dena for gatting user
+    const oldPublicId=req.user.coverImage.public_id
     
     const coverImageLocalPath=req.file?.path
 
@@ -627,12 +648,16 @@ const updateUserCoverImage = asyncHandler(async(req,res)=>{
           throw new ApiError(400,"Error while uploading Cover Image on cloudinary")
     }
     const url=coverImage.url
+    const public_id=coverImage.public_id
 
     const user=await User.findByIdAndUpdate(
         req.user?._id,
         {
              $set:{
-            coverImage:url
+            coverImage:{
+                url,
+                public_id
+            }
         }
         },
         {
@@ -640,6 +665,12 @@ const updateUserCoverImage = asyncHandler(async(req,res)=>{
         }
        
     ).select("-password -refreshToken")
+
+    const deletion=await deleteImageFromCloudinary(oldPublicId)
+    
+    if(!deletion || deletion.result !== "ok"){
+         console.error("Failed to delete old coverImage:", oldPublicId);
+    }
 
     return res
     .status(200)

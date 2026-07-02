@@ -87,6 +87,22 @@ fs.unlinkSync() --> delete file and wait
 fs.unlink()   --> delete file asynchronously using a calback 
 
 fs.promise.unlink()  --> delete file asynchronously using await  
+
+
  */
 
-export {uploadOnCloudinary};
+ const deleteImageFromCloudinary = async(public_id)=>{
+
+    
+ try {
+    
+       const response=await cloudinary.uploader.destroy(public_id)
+       
+       return response
+ } catch (error) {
+     console.error("Cloudinary deletion failed:", error);
+        return null;
+ }
+}
+
+export {uploadOnCloudinary , deleteImageFromCloudinary};
