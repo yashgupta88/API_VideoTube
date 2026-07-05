@@ -10,7 +10,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv"
 import 'dotenv/config'
-import { isObjectIdOrHexString } from "mongoose";
+import mongoose from "mongoose";
 
 
 // method for registering user 
@@ -817,7 +817,9 @@ const getWatchHistory = asyncHandler(async(req,res)=>{
         {
             $match:{
                 _id: new mongoose.Types.ObjectId(req.user._id) // to convert string to object id
-            },
+            }
+        },
+        {
             $lookup:{
                 from:"videos",
                 localField:"watchHistory",
@@ -842,7 +844,7 @@ const getWatchHistory = asyncHandler(async(req,res)=>{
                                 }
                             ]
 
-                        }
+                        },
                     },
                     {
                         $addFields:{ // to change from array to objects 

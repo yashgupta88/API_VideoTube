@@ -17,7 +17,7 @@ import { loginUser,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { verify } from "jsonwebtoken";
+
 const router = Router()
 
 
@@ -79,7 +79,7 @@ router.route("/cover-image").patch(
     updateUserCoverImage
 )
 
-router.route("/c/:username") // we use /c/ because we are taking data from params and username because we are taking username 
+router.route("/c/:username") // after ":" all are parameters that are passes like username 
 .get(verifyJWT,
    getUserChannelProfile 
 )
