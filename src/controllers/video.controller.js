@@ -17,6 +17,9 @@ import { Video } from "../models/video.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import mongoose from "mongoose";
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
+import { deleteImageFromCloudinary } from "../utils/cloudinary.js";
+
 
 const uploadVideo = asyncHandler (async (req , res)=>{
 
@@ -158,8 +161,218 @@ const getVideoById = asyncHandler(async(req,res)=>{
     )
 })
 
+const getAllVideos = asyncHandler(async(req,res)=>{  // all videos , not a specific channel videos 
+
+    const aggregate = Video.aggregate([ // remove await because , aggreagte paginate needs aggregate object 
+        // not array of docs , it needs before processing , then it process and paginate alongwith 
+        {
+            $match:{
+                isPublished: true
+            }
+        },
+        {
+            $sort:{
+                createdAt:-1
+                // Note "sort" sort docs in ascending order , when we give 1 and in descending order , when -1
+            }
+        },
+        {
+            $lookup:{
+                from:"users",
+                localField:"owner",
+                foreignField:"_id",
+                pipeline:[
+                    {
+                        $project:{
+                            username:1,
+                            avatar:1
+                        }
+                    }
+                ],
+                as:"owner"
+            }
+        },
+        {
+            $addFields:{
+                owner:{
+                    $first:"$owner"
+                }
+               
+            }
+        }
+
+
+    ])
+
+    const options={
+        page:Number(req.query.page) || 1,
+        limit:Number(req.query.limit) || 10
+    }
+
+    const video= await Video.aggregatePaginate(aggregate,options);
+
+    // video contains docs in which all docs of 10 videos are there and further the information of pages , like 
+    // limit ,nextpage etc .. 
+    
+
+    return res.status(200).json(
+        new ApiResponse(200,video,"Page fetched successfully")
+    )
+
+
+})
+
+// taking user Id by frontend to take all of its videos 
+const getVideosOfUser = asyncHandler(async(req,res)=>{
+    const {userId} = req.params
+
+    if(! mongoose.Types.ObjectId.isValid(userId)){
+        throw new ApiError(400 , "Invalid User Id")
+    }
+
+    const video= await Video.find({
+        owner:userId,
+        isPublished:true
+    }).sort({createdAt:-1})
+
+    return res.status(200).json(
+        new ApiResponse(200,video,"videos fetched SuccessFully")
+    )
+
+})
+
+// update video details like thumbnail ,  title , description
+
+const updateVideo = asyncHandler(async(req,res)=>{
+
+     const {videoId} = req.params
+
+     if( ! mongoose.Types.ObjectId.isValid(videoId)){
+          throw new ApiError(400,"Invalid Video Id")
+     }
+
+    const video= await Video.findById(videoId)
+
+    if(! video){
+         throw new ApiError(404,"Video Does Not Exist")
+    }
+   
+
+    if(req.user._id.toString() !== video.owner.toString()){  // ownership check is required 
+        throw new ApiError(403,"Unauthorized access")
+    }
+    
+
+    const thumbnailLocalPath = req.file?.path
+    const oldPublicId=video.thumbnail.public_id;
+
+    const {title,description} = req.body
+
+    const update = new Object();
+
+    if(thumbnailLocalPath) {
+         const thumbnail = await uploadOnCloudinary(thumbnailLocalPath)
+         const deletion = await deleteImageFromCloudinary (oldPublicId);
+         if(! deletion || deletion.result !== "ok"){
+            console.log("deletion on cloudinary failed")
+         }
+         update.thumbnail={
+            url:thumbnail.url,
+            public_id:thumbnail.public_id
+         }
+    }
+    if(description) update.description=description
+    if(title) update.title=title
+
+    if(Object.keys(update).length === 0){
+        throw new ApiError(400 , "No fields provided to update ")
+    }
+
+    const updatedVideo = await Video.findByIdAndUpdate(
+            videoId
+            ,
+            {
+                $set: update
+            }
+           ,
+            {
+                new:true
+            }
+        )
+    
+
+    // findbyIdandupdate , only finds by id and update and also can return new updated document
+    // updateone , updates the first document matching with given condition and return only updated information
+
+
+    return res.status(200).json(new ApiResponse(200,updatedVideo,"Updated Successfully"))
+
+})
+
+const deleteVideo = asyncHandler(async(req,res)=>{
+    const {videoId} = req.params
+
+    if(! videoId) {
+        throw new ApiError(400 , "Invalid video Id")
+    }
+
+    if(! mongoose.Types.ObjectId.isValid(videoId)){
+        throw new ApiError(400,"Invalid Video Id")
+    }
+
+    const video=await Video.findById(videoId)
+
+    if(! video){
+        throw new ApiError(404 ," Video does not exist")
+    }
+
+    if(video.owner.toString() !== req.user._id.toString()){
+          throw new ApiError(403,"Unauthorized access")
+    }
+
+    // note --> when we use findByIdAndDelete() , then Mongoose first finds the document , keeps a copy in 
+    // memory , then deletes it from the database and finally returns the copy 
+    // and that copied document helps to further delete the files from cloudinary or else 
+
+    // deleteOne deletes the first document matching the filter and returns only the deleted information
+
+   const deletedVideoDoc= await Video.findByIdAndDelete(
+        videoId
+    )
+
+    if(! deletedVideoDoc){
+        throw new ApiError(400,"Failed to delete video")
+    }
+
+
+
+    try{
+         await deleteImageFromCloudinary(deletedVideoDoc.videoFile?.public_id)
+    }
+    catch(err){
+         console.log(err)
+    }
+
+    try{
+        await deleteImageFromCloudinary(deletedVideoDoc.thumbnail?.public_id)
+    }
+    catch(err){
+        console.log(err)
+    }
+
+    
+        
+    
+
+    return res.status(200).json(new ApiResponse(200,{},"Deletion of Video Successful"))
+})
+
 
 
 export {uploadVideo ,
-    getVideoById
+    getVideoById,
+    getAllVideos,
+    getVideosOfUser,
+    updateVideo,
+    deleteVideo
 }
