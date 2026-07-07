@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { verifyJWT } from "../middlewares/auth.middleware";
-import { createComment, deleteComment, fetchAllComments, updateComment } from "../controllers/comment.controller";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { createComment, deleteComment, fetchAllComments, updateComment } from "../controllers/comment.controller.js";
 
 
 
@@ -23,3 +23,6 @@ router.route("/fetch-All-Comments/:videoId").post(
     
     fetchAllComments
 )
+
+
+export default router

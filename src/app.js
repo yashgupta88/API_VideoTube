@@ -103,6 +103,8 @@ res.send("hitesh")
 // ---------  routes import 
 
 import userRouter from './routes/user.routes.js'
+import videoRouter from './routes/video.routes.js'
+import commentRouter from './routes/comment.routes.js'
 
 // route declaration 
 
@@ -131,7 +133,8 @@ http://localhost:8000/users/register  --> yha pe jake registerUser method call h
  */
 
 //   '/users' is just working like a prefix after it all goes to route 
-
+app.use("/api/v1/videos",videoRouter)
+app.use("/api/v1/comments",commentRouter)
 
 
 

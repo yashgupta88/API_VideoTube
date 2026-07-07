@@ -79,7 +79,7 @@ router.route("/cover-image").patch(
     updateUserCoverImage
 )
 
-router.route("/c/:username") // after ":" all are parameters that are passes like username 
+router.route("/channel-profile/:username") // after ":" all are parameters that are passes like username 
 .get(verifyJWT,
    getUserChannelProfile 
 )

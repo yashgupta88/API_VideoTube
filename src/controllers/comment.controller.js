@@ -1,11 +1,11 @@
 
-import { Comment } from "../models/comment.model";
-import { asyncHandler } from "../utils/asyncHandler";
+import { Comment } from "../models/comment.model.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import mongoose from "mongoose";
-import { ApiResponse } from "../utils/ApiResponse";
-import { ApiError } from "../utils/ApiError";
-import { verifyJWT } from "../middlewares/auth.middleware";
-import { Video } from "../models/video.model";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiError } from "../utils/ApiError.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { Video } from "../models/video.model.js";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 
