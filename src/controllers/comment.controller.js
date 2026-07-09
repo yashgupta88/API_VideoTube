@@ -18,10 +18,7 @@ const createComment = asyncHandler(async (req,res)=>{
 
 
     const userId = req.user?._id 
-    if(! userId){
-        throw new ApiError(403 , "Login Required for Commenting ")
-    }
-
+  
     const {content} = req.body
 
     if(! content?.trim()){
