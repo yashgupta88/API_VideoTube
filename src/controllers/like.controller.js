@@ -121,7 +121,7 @@ const getLikedVideos= asyncHandler(async(req,res)=>{
 
     const userId=req.user._id
 
-    const {page=1,limit=10}=req.query
+    const {page=1,limit=10}=req.query  // query parameters comes from frontend 
 
     const aggregate= Like.aggregate([
         {
