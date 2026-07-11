@@ -15,11 +15,11 @@ router.route("/update-comment/:commentId").patch(
     verifyJWT,
    updateComment
 )
-router.route("/delete-comment/:commentId").post(
+router.route("/delete-comment/:commentId").delete(
     verifyJWT,
     deleteComment
 )
-router.route("/fetch-All-Comments/:videoId").post(
+router.route("/fetch-All-Comments/:videoId").get(
     
     fetchAllComments
 )
