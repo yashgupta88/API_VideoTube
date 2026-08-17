@@ -6,7 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 
 import { Video } from "../models/video.model.js";
-import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2.js";
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 import { User } from "../models/user.model.js";
 import { Comment } from "../models/comment.model.js";
 import { Like } from "../models/like.model.js";
